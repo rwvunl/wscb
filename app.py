@@ -55,7 +55,8 @@ def redirect_to_long_url(id):
     """Redirect the user to the long URL corresponding to the given ID."""
     try:
         long_url = id_url_mapping[id]
-        return redirect(long_url, code=301)
+        return jsonify({'value': long_url}), 301
+        # return redirect(long_url, code=301)
     except KeyError:
         return jsonify({'error': 'Short URL not found'}), 404
 
@@ -63,20 +64,22 @@ def redirect_to_long_url(id):
 @app.route('/<id>', methods=['PUT'])
 def update_long_url(id):
     """Updates the URL behind the given ID."""
-    new_url = json.loads(request.data.decode('utf-8')).get('url')
-    try:
-        if not new_url:
-            return jsonify({'error': 'New URL is required in the request body'}), 400
+    print(request.data)
+    data = json.loads(request.data.decode('utf-8'))
+    new_url = data.get('url')
+    # new_url = request.json.get('url')
+    if not new_url:
+        return jsonify({'error': 'New URL is required in the request body'}), 400
+    if not is_valid_url(new_url):
+        return jsonify({'error': 'Invalid URL format'}), 400
 
-        if id not in id_url_mapping.keys():
-            return '', 404
+    if id not in id_url_mapping.keys():
+        return jsonify({'error': 'Given ID is not existed'}), 404
 
-        # Update the URL behind the given ID
-        url_id_mapping[new_url] = id
-        id_url_mapping[id] = new_url
-        return jsonify({'message': 'URL updated successfully'}), 200
-    except Exception as e:
-        print(f'err:{e},new_url:{new_url}')
+    # Update the URL behind the given ID
+    url_id_mapping[new_url] = id
+    id_url_mapping[id] = new_url
+    return jsonify({'value': new_url}), 200
 
 
 @app.route('/<id>', methods=['DELETE'])

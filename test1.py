@@ -92,9 +92,9 @@ class TestApi(unittest.TestCase):
         #check value has been rally changed by doing a get
         url = f"{self.base_url}{endpoint}{id}"
         response = requests.get(url)
+        print(response.json().get("value"))
         self.assertEqual(response.json().get("value"), url_after_update, "Expected response body to be " +url_after_update+" , but got "+response.json().get("value"))
 
-        
         #check 400 by passing invalid url
         url = f"{self.base_url}{endpoint}{id}"   
         response = requests.put(url, data=json.dumps({'url': invalid_url}))
