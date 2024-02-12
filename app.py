@@ -70,12 +70,10 @@ def update_long_url(id):
     # new_url = request.json.get('url')
     if not new_url:
         return jsonify({'error': 'New URL is required in the request body'}), 400
-    if not is_valid_url(new_url):
-        return jsonify({'error': 'Invalid URL format'}), 400
-
     if id not in id_url_mapping.keys():
         return jsonify({'error': 'Given ID is not existed'}), 404
-
+    if not is_valid_url(new_url):
+        return jsonify({'error': 'Invalid URL format'}), 400
     # Update the URL behind the given ID
     url_id_mapping[new_url] = id
     id_url_mapping[id] = new_url
