@@ -1,49 +1,98 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect
 import random
 import string
+import re
+app = Flask(__name__)  # 用于存储URL映射关系的字典
+url_id_mapping = dict()
+id_url_mapping = dict()
 
-app = Flask(__name__)
-url_mapping = dict() # 用于存储URL映射关系的字典
-
-
-def generate_short_url():
-    """生成短标识符"""
+def generate_id():
+    """Generates ID."""
     characters = string.ascii_letters + string.digits
-    short_url = ''.join(random.choice(characters) for _ in range(6))  # 生成6位长度的随机字符串作为短标识符
-    return short_url
+    return ''.join(random.choice(characters) for _ in range(6))  # Generating a 6-character long ID
 
+def is_valid_url(url):
+    """Check if the provided URL is valid."""
+    regex = re.compile(
+        r'^(?:http|ftp)s?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    return re.match(regex, url) is not None
 
-@app.route('/shorten', methods=['POST'])
-def shorten_url():
-    """将长URL映射到短标识符上"""
-    long_url = request.json.get('long_url')
+@app.route('/', methods=['POST'])
+def create_short_url():
+    """Creates a new short URL/ID for the given long URL."""
+    long_url = request.json.get('value')
     if not long_url:
-        return jsonify({'error': 'Long URL is required'}), 400
+        return jsonify({'error': 'Long URL is required in the request body'}), 400
 
-    short_url = generate_short_url()
-    url_mapping[short_url] = long_url
-    return jsonify({'short_url': short_url}), 201
+    if not is_valid_url(long_url):
+        return jsonify({'error': 'Invalid URL format'}), 400
+
+    id = generate_id()
+    url_id_mapping[long_url] = id
+    id_url_mapping[id] = long_url
+    short_url = 'http://127.0.0.1:5000/{id}'.format(id=id)
+    return jsonify({'id': id}), 201
 
 
-@app.route('/resolve/<short_url>', methods=['GET'])
-def resolve_url(short_url):
-    """根据短标识符获取长URL"""
-    long_url = url_mapping.get(short_url)
-    if not long_url:
+@app.route('/', methods=['GET'])
+def list_urls():
+    """Returns a list of all keys (IDs) or all long URLs."""
+    all_keys = list(url_id_mapping.keys())
+    all_urls = list(url_id_mapping.values())
+    return jsonify({'keys': all_keys, 'urls': all_urls}), 200
+
+
+@app.route('/<id>', methods=['GET'])
+def redirect_to_long_url(id):
+    """Redirect the user to the long URL corresponding to the given ID."""
+    long_url = id_url_mapping[id]
+    if long_url:
+        return redirect(long_url, code=301)
+    else:
         return jsonify({'error': 'Short URL not found'}), 404
 
-    return jsonify({'long_url': long_url})
 
+@app.route('/<id>', methods=['PUT'])
+def update_long_url(id):
+    """Updates the URL behind the given ID."""
+    new_url = request.json.get('url')
+    if not new_url:
+        return jsonify({'error': 'New URL is required in the request body'}), 400
 
-@app.route('/delete/<short_url>', methods=['DELETE'])
-def delete_url(short_url):
-    """删除URL映射关系"""
-    if short_url not in url_mapping:
+    if id not in id_url_mapping.keys():
         return jsonify({'error': 'Short URL not found'}), 404
 
-    del url_mapping[short_url]
+    # Update the URL behind the given ID
+    url_id_mapping[new_url] = id
+    id_url_mapping[id] = new_url
+    return jsonify({'message': 'URL updated successfully'}), 200
+
+
+@app.route('/<id>', methods=['DELETE'])
+def delete_url(id):
+    """Deletes the given short URL/ID."""
+    if id not in id_url_mapping.keys():
+        return jsonify({'error': 'Short URL not found'}), 404
+
+    # Delete the short URL/ID
+    del url_id_mapping[id_url_mapping[id]]
+    del id_url_mapping[id]
     return '', 204
 
 
+@app.route('/', methods=['DELETE'])
+def delete_all_urls():
+    """Deletes all ID/URL pairs"""
+    url_id_mapping.clear()
+    id_url_mapping.clear()
+    return jsonify({'message': 'All ID/URL pairs have been deleted'}), 204
+
+
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
+
