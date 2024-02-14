@@ -14,6 +14,8 @@ increment = 0
 
 lock = threading.Lock()
 
+# python -m flask --app app run
+
 def generate_id():
     """Generates ID."""
     # Generate random part
@@ -44,7 +46,7 @@ def list_urls():
     return jsonify(id_url_mapping), 200
 
 @app.route('/<id>', methods=['GET'])
-def redirect_to_long_url(id):
+def get_long_url(id):
     """Redirect the user to the long URL corresponding to the given ID."""
     try:
         with lock:
@@ -76,11 +78,11 @@ def update_long_url(id):
 def delete_url(id):
     """Deletes the given short URL/ID."""
     if id not in id_url_mapping.keys():
-        return jsonify({'error': 'Short URL not found'}), 404
+        return jsonify({'error': f'{id} not found'}), 404
     # Delete the short URL/ID
     with lock:
         del id_url_mapping[id]
-    return '', 204
+    return {'message': f'{id} has been deleted'}, 204
 
 
 @app.route('/', methods=['DELETE'])
@@ -88,7 +90,7 @@ def delete_all_urls():
     """Deletes all ID/URL pairs"""
     with lock:
         id_url_mapping.clear()
-    return jsonify({'message': 'All ID/URL pairs have been deleted'}), 404
+    return jsonify({'message': 'All ID/URL pairs have been deleted'}), 204
 
 
 if __name__ == '__main__':
