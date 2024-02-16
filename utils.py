@@ -2,14 +2,13 @@ import json
 import re
 import hashlib
 import hmac
-import base64
 
 base62_chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
 
 def base62_encode(num):
-    if (num == 0):
+    if num == 0:
         return base62_chars[0]
     arr = []
     base = len(base62_chars)
