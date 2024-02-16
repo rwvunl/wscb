@@ -16,6 +16,7 @@ lock = threading.Lock()
 # current username
 global current_user
 
+
 def generate_id(username):
     """Generates ID."""
     # Generate random part
@@ -38,13 +39,15 @@ def require_auth(func):
     def wrapper(*args, **kwargs):
         jwt = request.cookies.get("jwt")
         if jwt is None:
-            return jsonify({'error': 'Invalid Access. You are not logged in.'}), 403
+            return jsonify({'error': '403 Forbidden'}), 403
         global current_user
         current_user = get_username_from_jwt(jwt)
         if current_user not in db_dict:
             db_dict[current_user] = dict()
         return func(*args, **kwargs)
+
     return wrapper
+
 
 @shorten_url_service.route('/', methods=['POST'])
 @require_auth
@@ -52,14 +55,14 @@ def create_short_url():
     """Creates a new short URL/ID for the given long URL."""
     long_url = request.json.get('value')
     if not long_url:
-        return jsonify({'error': 'Long URL is required in the request body'}), 400
+        return jsonify({'error': '400 Bad request', 'message': 'Long URL is required in the request body'}), 400
     if not is_valid_url(long_url):
-        return jsonify({'error': 'Invalid URL format'}), 400
+        return jsonify({'error': '400 Bad request', 'message': 'Invalid Long URL'}), 400
     id_for_long_url = generate_id(current_user)
     with lock:
         db_dict[current_user][id_for_long_url] = long_url
     # short_url = 'http://127.0.0.1:5000/{id}'.format(id=id)
-    return jsonify({'id':id_for_long_url}), 201
+    return jsonify({'id': id_for_long_url}), 201
 
 
 @shorten_url_service.route('/', methods=['GET'])
@@ -88,11 +91,11 @@ def update_long_url(id):
     data = request.json
     new_url = data.get("value")
     if not new_url:
-        return jsonify({'error': 'New URL is required in the request body'}), 400
+        return jsonify({'error': '400 Bad request', 'message': 'Invalid new url'}), 400
     if not is_valid_url(new_url):
-        return jsonify({'error': 'Invalid URL format'}), 400
+        return jsonify({'error': '400 Bad request', 'message': 'Invalid new url'}), 400
     if id not in db_dict[current_user]:
-        return jsonify({'error': 'Given ID is not existed'}), 404
+        return jsonify({'error': '404 Not Found', 'message': 'Given ID is not found'}), 404
     with lock:
         db_dict[current_user][id] = new_url
     return jsonify({'value': new_url}), 200
@@ -103,10 +106,10 @@ def update_long_url(id):
 def delete_url(id):
     """Deletes the given short URL/ID."""
     if id not in db_dict[current_user]:
-        return jsonify({'error': f'{id} not found'}), 404
+        return jsonify({'error': '404 Not Found', 'message': 'Given ID is not found'}), 404
     with lock:
         del db_dict[current_user][id]
-    return {'message': f'{id} has been deleted'}, 204
+    return {'message': f'{id} has been deleted successfully'}, 204
 
 
 @shorten_url_service.route('/', methods=['DELETE'])
@@ -115,4 +118,4 @@ def delete_all_urls():
     """Deletes all ID/URL pairs"""
     with lock:
         db_dict[current_user].clear()
-    return jsonify({'message': 'All ID/URL pairs have been deleted'}), 204
+    return jsonify({'message': 'ALL deleted successfully'}), 404
