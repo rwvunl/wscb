@@ -100,9 +100,14 @@ def generate_jwt(payload, key):
     jwt = f"{encoded_header}.{encoded_payload}.{encoded_signature}"
     return jwt
 
+def get_username_from_jwt(jwt):
+    jwt = jwt.split('.')
+    payload = json.loads(base64_decode(jwt[1]))
+    return payload['username']
+
 
 def validate_password_format(password):
-    password_pattern = re.compile(r"^[a-zA-Z0-9]{8,}$")  # 最少8位，只包含字母和数字
+    password_pattern = re.compile(r"^[a-zA-Z0-9]{8,}$")  # Minimum of 8 characters, only letters and numbers
     if password_pattern.match(password):
         return True
     return False
@@ -110,7 +115,6 @@ def validate_password_format(password):
 
 def is_input_password_correct(password, input_password, salt):
     if get_hash(password, salt) != get_hash(input_password, salt):
-
         return False
     return True
 

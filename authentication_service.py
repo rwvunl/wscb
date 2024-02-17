@@ -1,5 +1,5 @@
 from flask import current_app, Blueprint, request, jsonify, make_response
-from utils import get_hash, generate_jwt, is_input_password_correct, validate_password_format
+from utils import get_hash, generate_jwt, is_input_password_correct, validate_password_format, get_username_from_jwt
 from functools import wraps
 import secrets
 
@@ -16,8 +16,12 @@ def validate_username_and_password(func):
         if not data:
             return jsonify({'error': '400 Bad request'}), 400
         username = data.get('username')
-        input_password = get_hash(data.get('password'), users_salt[username])
+        jwt = request.cookies.get('jwt')
+        if jwt is not None:
+            if get_username_from_jwt(jwt) != username:
+                return jsonify({'error': '403 Forbidden'}), 403
         try:
+            input_password = get_hash(data.get('password'), users_salt[username])
             is_correct = is_input_password_correct(password=users[username], input_password=input_password,
                                                    salt=users_salt[username])
         except KeyError:
@@ -50,6 +54,9 @@ def create_user():
 @authentication_service.route('/', methods=['PUT'])
 @validate_username_and_password
 def update_password():
+    jwt = request.cookies.get('jwt')
+    if jwt is None:
+        return jsonify({'error': '403 Forbidden'}), 403
     data = request.json
     username = data.get('username')
     new_password = data.get('new_password')

@@ -1,10 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 import random
 import string
 import json
 import threading
 from functools import wraps
-from utils import base62_encode, is_valid_url, base64_decode
+from utils import base62_encode, is_valid_url, get_username_from_jwt
 
 shorten_url_service = Blueprint("shorten_url_service", __name__)
 
@@ -26,12 +26,6 @@ def generate_id(username):
         increment += 1
         return random_part + base62_encode(increment)
     return random_part
-
-
-def get_username_from_jwt(jwt):
-    jwt = jwt.split('.')
-    payload = json.loads(base64_decode(jwt[1]))
-    return payload['username']
 
 
 def require_auth(func):
@@ -109,7 +103,10 @@ def delete_url(id):
         return jsonify({'error': '404 Not Found', 'message': 'Given ID is not found'}), 404
     with lock:
         del db_dict[current_user][id]
-    return {'message': f'{id} has been deleted successfully'}, 204
+    response = make_response(jsonify({'message': f'{id} has been deleted successfully'}))
+    response.headers['Content-Type'] = 'application/json'
+    response.status_code = 204
+    return response
 
 
 @shorten_url_service.route('/', methods=['DELETE'])
