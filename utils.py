@@ -1,7 +1,7 @@
 import json
 import re
-import hashlib
-import hmac
+import hashlib  # to encrypt users' password
+import hmac  # to encrypt JWT signature when generating JWT
 
 base62_chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -24,13 +24,11 @@ def base62_decode(string):
     base = len(base62_chars)
     strlen = len(string)
     num = 0
-
     idx = 0
     for char in string:
         power = (strlen - (idx + 1))
         num += base62_chars.index(char) * (base ** power)
         idx += 1
-
     return num
 
 
@@ -99,6 +97,7 @@ def generate_jwt(payload, key):
     encoded_signature = hamc_to_base64(signature)
     jwt = f"{encoded_header}.{encoded_payload}.{encoded_signature}"
     return jwt
+
 
 def get_username_from_jwt(jwt):
     jwt = jwt.split('.')

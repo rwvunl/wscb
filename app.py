@@ -9,6 +9,7 @@ app.register_blueprint(authentication_service,url_prefix='/users')
 
 app.config['SECRET_KEY'] = "this_is_a_secret"
 
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(Debug=True)
 

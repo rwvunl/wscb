@@ -1,9 +1,8 @@
 from flask import Blueprint, request, jsonify, make_response
 import random
 import string
-import json
 import threading
-from functools import wraps
+from functools import wraps  # used before wrapper function
 from utils import base62_encode, is_valid_url, get_username_from_jwt
 
 shorten_url_service = Blueprint("shorten_url_service", __name__)

@@ -1,7 +1,7 @@
 from flask import current_app, Blueprint, request, jsonify, make_response
 from utils import get_hash, generate_jwt, is_input_password_correct, validate_password_format, get_username_from_jwt
-from functools import wraps
-import secrets
+from functools import wraps  # used before wrapper function
+import secrets  # to generate salt for each user before storing password
 
 authentication_service = Blueprint("authentication_service", __name__)
 
