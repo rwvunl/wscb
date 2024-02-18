@@ -26,5 +26,5 @@ docker pull ivywr/p4-wscb:wscb-a2-imagev2
 ```
 - Then run an image as a container
 ```dockerfile
-docker run -d -p 5000:5000 <IMAGE ID>
+docker run -d -p 5001:5000 <IMAGE ID>
 ```
