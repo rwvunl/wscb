@@ -2,13 +2,13 @@
 
 FROM python:3.8-slim-buster
 
-WORKDIR /docker-image
+WORKDIR /app
 
-COPY requirements.txt /docker-image
+COPY . /app
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-COPY . .
+EXPOSE 5001
 
 CMD ["python3", "-m" , "flask", "run", "--host=0.0.0.0"]

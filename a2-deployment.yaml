@@ -1,0 +1,27 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-web-app
+  labels:
+    app: flask-web-app
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flask-web-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: flask-web-app
+        version: v1
+    spec:
+      containers:
+      - name: flask-web-app
+        image: ivywr/p4-wscb:wscb-a2-imagev2
+        ports:
+        - containerPort: 5001
+
+

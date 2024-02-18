@@ -11,5 +11,5 @@ app.config['SECRET_KEY'] = "this_is_a_secret"
 
 
 if __name__ == '__main__':
-    app.run(Debug=True)
+    app.run(Debug=True,host='0.0.0.0', port=5001)
 
