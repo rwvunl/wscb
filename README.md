@@ -9,7 +9,7 @@ Navigate to the project directory  and execute the following command
 python -m flask --app app run
 ```
 
-Flask will look for a module named `app` and run it as a Flask application. If everything is set up correctly, you should see the Flask development server start, and you can access your Flask application at the specified URL (usually `http://127.0.0.1:5000/` by default).
+Flask will look for a module named `app` and run it as a Flask application. If everything is set up correctly, you should see the Flask development server start, and you can access your Flask application at the specified URL (usually `http://0.0.0.0:5000/` by default).
 
 # Assignment 2: RESTful microservices architectures
 ## Two ways to run the project
