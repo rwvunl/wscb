@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: flask-web-app
-        image: ivywr/p4-wscb:wscb-a2-imagev4
+        image: ivywr/p4-wscb:wscb-a2-imagev5
         ports:
         - containerPort: 5001
 
