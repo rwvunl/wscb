@@ -1,7 +1,7 @@
 from flask import current_app, Blueprint, request, jsonify, make_response
 from utils import get_hash, generate_jwt, is_input_password_correct, validate_password_format, get_username_from_jwt
 from functools import wraps  # used before wrapper function
-import secrets  # to generate salt for each user before storing password
+import secrets  # to generate a good salt value for each user when storing password
 
 authentication_service = Blueprint("authentication_service", __name__)
 
@@ -87,6 +87,7 @@ def logout():
         return jsonify({'error': '401 Unauthorized', 'message': 'You are not logged in'}), 401
     response = jsonify({'message': 'Logout successfully'})
     try:
+        response.set_cookie('jwt', '', expires=0)
         response.delete_cookie('jwt')
     except Exception as e:
         return jsonify({'error': '500 Something went wrong while logout', 'message': str(e)}), 500
