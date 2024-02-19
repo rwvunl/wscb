@@ -19,15 +19,15 @@ def validate_username_and_password(func):
         jwt = request.cookies.get('jwt')
         if jwt is not None:
             if get_username_from_jwt(jwt) != username:
-                return jsonify({'error': '403 Forbidden'}), 403
+                return jsonify({'detail': 'forbidden'}), 403
         try:
             input_password = get_hash(data.get('password'), users_salt[username])
             is_correct = is_input_password_correct(password=users[username], input_password=input_password,
                                                    salt=users_salt[username])
         except KeyError:
-            return jsonify({'error': '403 Forbidden'}), 403
+            return jsonify({'detail': 'forbidden'}), 403
         if is_correct is False:
-            return jsonify({'error': '403 Forbidden'}), 403
+            return jsonify({'detail': 'forbidden'}), 403
         return func(*args, **kwargs)
 
     return wrapper
@@ -41,10 +41,10 @@ def create_user():
     username = data.get('username')
     password = data.get('password')
     if username in users:
-        return jsonify({'error': '409 Duplicate', 'message': 'Username already exists'}), 409
-    is_validated = validate_password_format(password)
-    if is_validated is False:
-        return jsonify({'error': '400 Bad request', 'message': 'Invalid Password: Minimum of 8 characters, consisting only of letters and numbers'}), 400
+        return jsonify({'detail': 'duplicate', 'message': 'Username already exists'}), 409
+    # is_validated = validate_password_format(password)
+    # if is_validated is False:
+    #     return jsonify({'error': '400 Bad request', 'message': 'Invalid Password: Minimum of 8 characters, consisting only of letters and numbers'}), 400
     salt = secrets.token_hex(16)  # salt length == 16
     users_salt[username] = salt
     users[username] = get_hash(password, salt)
@@ -54,15 +54,15 @@ def create_user():
 @authentication_service.route('/', methods=['PUT'])
 @validate_username_and_password
 def update_password():
-    jwt = request.cookies.get('jwt')
-    if jwt is None:
-        return jsonify({'error': '403 Forbidden'}), 403
+    # jwt = request.cookies.get('jwt')
+    # if jwt is None:
+    #     return jsonify({'error': '403 Forbidden'}), 403
     data = request.json
     username = data.get('username')
     new_password = data.get('new_password')
-    is_validated = validate_password_format(new_password)
-    if is_validated is False:
-        return jsonify({'error': '400 Bad request', 'message': 'Invalid Password: Minimum of 8 characters, consisting only of letters and numbers'}), 400
+    # is_validated = validate_password_format(new_password)
+    # if is_validated is False:
+    #     return jsonify({'error': '400 Bad request', 'message': 'Invalid Password: Minimum of 8 characters, consisting only of letters and numbers'}), 400
     users[username] = get_hash(password=new_password, salt=users_salt[username])
     return jsonify({'message': 'Password updated successfully'}), 200
 
