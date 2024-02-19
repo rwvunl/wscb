@@ -23,7 +23,7 @@ docker pull ivywr/p4-wscb:wscb-a2-imagev4
 ```
 - Then run an image as a container
 ```dockerfile
-docker run -d -p <your_custom_port_number>:5000 <IMAGE ID>
+docker run -d -p <your_custom_port_number>:5001 <IMAGE ID>
 ```
 ## Use Postman to test services
 > Specifications for endpoints are provided in assignment report.
