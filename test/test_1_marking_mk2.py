@@ -11,7 +11,7 @@ class TestApi(unittest.TestCase):
     
 
     def populate_variables_from_csv(self):
-        with open('read_from.csv', 'r') as f:
+        with open('../read_from.csv', 'r') as f:
             reader = csv.reader(f)
             next(reader, None)
             data = [row for row in reader if len(row) >= 5]

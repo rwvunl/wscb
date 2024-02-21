@@ -16,10 +16,15 @@ def validate_username_and_password(func):
         if not data:
             return jsonify({'error': '400 Bad request'}), 400
         username = data.get('username')
-        jwt = request.cookies.get('jwt')
-        if jwt is not None:
-            if get_username_from_jwt(jwt) != username:
-                return jsonify({'detail': 'forbidden'}), 403
+        # jwt = request.cookies.get('jwt')
+        # if jwt is not None:
+        #     if get_username_from_jwt(jwt) != username:
+        #         return jsonify({'detail': 'forbidden'}), 403
+        # else:
+        #     jwt = request.headers['jwt']
+        #     if jwt is not None:
+        #         if get_username_from_jwt(jwt) != username:
+        #             return jsonify({'detail': 'forbidden'}), 403
         try:
             input_password = get_hash(data.get('password'), users_salt[username])
             is_correct = is_input_password_correct(password=users[username], input_password=input_password,
@@ -74,8 +79,9 @@ def login():
     username = data.get('username')
     jwt = generate_jwt(payload={'username': username}, key=current_app.config['SECRET_KEY'])
     try:
-        response = make_response(jsonify({'message': 'Login successful'}))
-        response.set_cookie('jwt', jwt, max_age=3600)  # set JWT lifetime == 3600 seconds
+        response = make_response(jsonify({'message': 'Login successful','token':jwt}))
+        response.delete_cookie('jwt')
+        response.set_cookie('jwt', jwt, path='/')  # set JWT lifetime == 3600 seconds
     except Exception as e:
         return jsonify({'error': '500 Something went wrong while login', 'message': str(e)}), 500
     return response, 200
@@ -87,7 +93,7 @@ def logout():
         return jsonify({'error': '401 Unauthorized', 'message': 'You are not logged in'}), 401
     response = jsonify({'message': 'Logout successfully'})
     try:
-        response.set_cookie('jwt', '', expires=0)
+        # response.set_cookie('jwt', jwt, expires=0)
         response.delete_cookie('jwt')
     except Exception as e:
         return jsonify({'error': '500 Something went wrong while logout', 'message': str(e)}), 500

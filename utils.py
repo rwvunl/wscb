@@ -2,11 +2,12 @@ import json
 import re
 import hashlib  # to encrypt users' password
 import hmac  # to encrypt JWT signature when generating JWT
+import base64
 
 base62_chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
-
+SECRET_KEY = "this_is_a_secret"
 def base62_encode(num):
     if num == 0:
         return base62_chars[0]
@@ -44,42 +45,6 @@ def is_valid_url(url):
     return re.match(regex, url) is not None
 
 
-def base64_encode(input_string):
-    input_bytes = input_string.encode('utf-8')
-    result = ""
-    for i in range(0, len(input_bytes), 3):
-        chunk = input_bytes[i:i + 3]
-        if len(chunk) < 3:
-            chunk += b'\x00' * (3 - len(chunk))
-        block1 = chunk[0] >> 2
-        block2 = ((chunk[0] & 0x03) << 4) | (chunk[1] >> 4)
-        block3 = ((chunk[1] & 0x0F) << 2) | (chunk[2] >> 6)
-        block4 = chunk[2] & 0x3F
-        result += base64_chars[block1]
-        result += base64_chars[block2]
-        result += base64_chars[block3]
-        result += base64_chars[block4]
-    padding = len(result) % 4
-    if padding:
-        result += "=" * (4 - padding)
-    return result
-
-
-def base64_decode(encoded_string):
-    result_bytes = bytearray()
-    encoded_bytes = encoded_string.encode('utf-8')
-    encoded_bytes = encoded_bytes.rstrip(b'=')
-    for i in range(0, len(encoded_bytes), 4):
-        chunk = encoded_bytes[i:i + 4]
-        block1 = base64_chars.index(chr(chunk[0])) << 2 | base64_chars.index(chr(chunk[1])) >> 4
-        block2 = (base64_chars.index(chr(chunk[1])) & 0x0F) << 4 | base64_chars.index(chr(chunk[2])) >> 2
-        block3 = (base64_chars.index(chr(chunk[2])) & 0x03) << 6 | base64_chars.index(chr(chunk[3]))
-        result_bytes.append(block1)
-        result_bytes.append(block2)
-        result_bytes.append(block3)
-    return result_bytes.decode('utf-8')
-
-
 def get_hash(password, salt):
     salted_password = password + salt
     return hashlib.sha256(salted_password.encode()).hexdigest()
@@ -91,8 +56,8 @@ def get_hmac(key, msg):
 
 def generate_jwt(payload, key):
     header = {"alg": "HS256", "typ": "JWT"}
-    encoded_header = base64_encode(json.dumps(header))
-    encoded_payload = base64_encode(json.dumps(payload))
+    encoded_header = base64.b64encode(json.dumps(header).encode('utf-8')).decode('utf-8')
+    encoded_payload =base64.b64encode(json.dumps(payload).encode('utf-8')).decode('utf-8')
     signature = get_hmac(key, msg=f"{encoded_header}.{encoded_payload}")
     encoded_signature = hamc_to_base64(signature)
     jwt = f"{encoded_header}.{encoded_payload}.{encoded_signature}"
@@ -101,7 +66,7 @@ def generate_jwt(payload, key):
 
 def get_username_from_jwt(jwt):
     jwt = jwt.split('.')
-    payload = json.loads(base64_decode(jwt[1]))
+    payload = json.loads(base64.b64decode(jwt[1]).decode('utf-8'))
     return payload['username']
 
 
@@ -155,12 +120,34 @@ def base64_to_hmac(data):
 
     return bytes(decoded)
 
+def validate_jwt(jwt):
+    jwt = jwt.split('.')
+    length = len(jwt)
+    if length != 3:
+        return False
+    else:
+        received = jwt[2]
+        header = jwt[0]
+        payload = jwt[1]
+        signature = get_hmac(key=SECRET_KEY, msg=f"{header}.{payload}")
+        encoded_signature = hamc_to_base64(signature)
+        if received == encoded_signature:
+            return True
+        else:
+            return  False
 
 if __name__ == '__main__':
-    print(base62_encode(999999999999999999999999999999))
-    print(base62_decode(base62_encode(999999999999999999999999999999)))
-    print(base64_encode(json.dumps({"alg": "HS256", "typ": "JWT"})))
-    print(base64_decode(base64_encode(json.dumps({"alg": "HS256", "typ": "JWT"}))))
-    a = b'\xe0]\xa4K\x80N\xec\xfav\x1b/\x8aZ:\xd6\x9a8\x109Y\xb7\x81\xbaNL\xb5\xba?\x80&\xb0b'
-    print(hamc_to_base64(a))
-    print(base64_to_hmac(hamc_to_base64(a)))
+    # print(base62_encode(999999999999999999999999999999))
+    # print(base62_decode(base62_encode(999999999999999999999999999999)))
+    # print(base64_encode(json.dumps({"alg": "HS256", "typ": "JWT"})))
+    # print(base64_decode(base64_encode(json.dumps({"alg": "HS256", "typ": "JWT"}))))
+    username = "test"
+    jwt = generate_jwt(payload={'username': username}, key=SECRET_KEY)
+    print(jwt)
+    print(validate_jwt(jwt))
+    jwt = "sdfsdf.eyJ1c2VybmFtZSI6ICJ0ZXN0In0=.Swg1ng91VwsXbPB9B85Lx33RYKN/o4m5vRqCgPS+eWA="
+    print(jwt)
+    print(validate_jwt(jwt))
+    # a = b'\xe0]\xa4K\x80N\xec\xfav\x1b/\x8aZ:\xd6\x9a8\x109Y\xb7\x81\xbaNL\xb5\xba?\x80&\xb0b'
+    # print(hamc_to_base64(a))
+    # print(base64_to_hmac(hamc_to_base64(a)))
