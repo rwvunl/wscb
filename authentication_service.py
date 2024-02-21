@@ -2,7 +2,8 @@ from flask import current_app, Blueprint, request, jsonify, make_response
 from utils import get_hash, generate_jwt, is_input_password_correct, validate_password_format, get_username_from_jwt
 from functools import wraps  # used before wrapper function
 import secrets  # to generate a good salt value for each user when storing password
-
+import threading
+lock = threading.Lock()
 authentication_service = Blueprint("authentication_service", __name__)
 
 users = {}  # {username:password}
@@ -51,8 +52,9 @@ def create_user():
     # if is_validated is False:
     #     return jsonify({'error': '400 Bad request', 'message': 'Invalid Password: Minimum of 8 characters, consisting only of letters and numbers'}), 400
     salt = secrets.token_hex(16)  # salt length == 16
-    users_salt[username] = salt
-    users[username] = get_hash(password, salt)
+    with lock:
+        users_salt[username] = salt
+        users[username] = get_hash(password, salt)
     return jsonify({'message': 'User created successfully'}), 201
 
 
@@ -68,7 +70,8 @@ def update_password():
     # is_validated = validate_password_format(new_password)
     # if is_validated is False:
     #     return jsonify({'error': '400 Bad request', 'message': 'Invalid Password: Minimum of 8 characters, consisting only of letters and numbers'}), 400
-    users[username] = get_hash(password=new_password, salt=users_salt[username])
+    with lock:
+        users[username] = get_hash(password=new_password, salt=users_salt[username])
     return jsonify({'message': 'Password updated successfully'}), 200
 
 

@@ -59,7 +59,7 @@ def generate_jwt(payload, key):
     encoded_header = base64.b64encode(json.dumps(header).encode('utf-8')).decode('utf-8')
     encoded_payload =base64.b64encode(json.dumps(payload).encode('utf-8')).decode('utf-8')
     signature = get_hmac(key, msg=f"{encoded_header}.{encoded_payload}")
-    encoded_signature = hamc_to_base64(signature)
+    encoded_signature = hmac_to_base64(signature)
     jwt = f"{encoded_header}.{encoded_payload}.{encoded_signature}"
     return jwt
 
@@ -83,7 +83,7 @@ def is_input_password_correct(password, input_password, salt):
     return True
 
 
-def hamc_to_base64(data):
+def hmac_to_base64(data):
     encoded = ''
     num_bits = 0
     buffer = 0
@@ -126,12 +126,12 @@ def validate_jwt(jwt):
     if length != 3:
         return False
     else:
-        received = jwt[2]
+        received_signature = jwt[2]
         header = jwt[0]
         payload = jwt[1]
         signature = get_hmac(key=SECRET_KEY, msg=f"{header}.{payload}")
-        encoded_signature = hamc_to_base64(signature)
-        if received == encoded_signature:
+        encoded_signature = hmac_to_base64(signature)
+        if received_signature == encoded_signature:
             return True
         else:
             return  False
@@ -139,8 +139,6 @@ def validate_jwt(jwt):
 if __name__ == '__main__':
     # print(base62_encode(999999999999999999999999999999))
     # print(base62_decode(base62_encode(999999999999999999999999999999)))
-    # print(base64_encode(json.dumps({"alg": "HS256", "typ": "JWT"})))
-    # print(base64_decode(base64_encode(json.dumps({"alg": "HS256", "typ": "JWT"}))))
     username = "test"
     jwt = generate_jwt(payload={'username': username}, key=SECRET_KEY)
     print(jwt)
@@ -148,6 +146,6 @@ if __name__ == '__main__':
     jwt = "sdfsdf.eyJ1c2VybmFtZSI6ICJ0ZXN0In0=.Swg1ng91VwsXbPB9B85Lx33RYKN/o4m5vRqCgPS+eWA="
     print(jwt)
     print(validate_jwt(jwt))
-    # a = b'\xe0]\xa4K\x80N\xec\xfav\x1b/\x8aZ:\xd6\x9a8\x109Y\xb7\x81\xbaNL\xb5\xba?\x80&\xb0b'
-    # print(hamc_to_base64(a))
-    # print(base64_to_hmac(hamc_to_base64(a)))
+    a = b'\xe0]\xa4K\x80N\xec\xfav\x1b/\x8aZ:\xd6\x9a8\x109Y\xb7\x81\xbaNL\xb5\xba?\x80&\xb0b'
+    print(hmac_to_base64(a))
+    print(base64_to_hmac(hmac_to_base64(a)))
