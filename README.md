@@ -19,7 +19,7 @@ docker build -t wscb-a2-image .
 ```
 - Note that we have pushed the image on docker hub, so you can also directly execute the following command
 ```dockerfile
-docker pull ivywr/p4-wscb:wscb-a2-imagev4
+docker pull ivywr/p4-wscb:wscb-a2-imagev5
 ```
 - Then run an image as a container
 ```dockerfile
