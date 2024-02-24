@@ -1,28 +1,38 @@
-import json
-
-from flask import Blueprint, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+from mysql_config import BaseConfig
 import random
 import string
-import threading
+import json
 from functools import wraps  # used before wrapper function
 from utils import base62_encode, is_valid_url, get_username_from_jwt, validate_jwt
+from models import UrlMappingDao
 
-shorten_url_service = Blueprint("shorten_url_service", __name__)
+app = Flask(__name__)
+app.config['SECRET_KEY'] = "this_is_a_secret"
+app.config.from_object(BaseConfig)
 
-db_dict = dict()
-global increment
-increment = 0
-lock = threading.Lock()
+Base = declarative_base()
 
+# 创建一个带连接池的引擎，引擎是与特定数据库的连接
+engine = create_engine(BaseConfig.SQLALCHEMY_DATABASE_URI,
+                       max_overflow=15,  # 超过连接池大小外最多创建的连接
+                       pool_size=10,  # 连接池大小
+                       pool_timeout=30,  # 池中没有线程最多等待的时间，否则报错
+                       pool_recycle=-1  # 多久之后对线程池中的线程进行一次连接的回收（重置）
+                       )
+Base.metadata.create_all(engine)  # 通过基类与数据库进行交互创建表结构，此时表内还没有数据
 
-def generate_id(username):
+def generate_id():
     """Generates ID."""
     # Generate random part
     random_part = ''.join(random.choices(string.ascii_letters + string.digits, k=7))
     # Generate incremental part
-    if random_part in db_dict[username]:
-        increment += 1
-        return random_part + base62_encode(increment)
+    data = UrlMappingDao.get_by_short_url(random_part)
+    if data:
+        increment_part = base62_encode(UrlMappingDao.get_max_id())
+        return random_part + increment_part
     return random_part
 
 
@@ -59,7 +69,9 @@ def require_auth(func):
         #     if validate_jwt(jwt) is False:
         #         return jsonify({'error': '403 Forbidden'}), 403
         return func(*args, **kwargs)
+
     return wrapper
+
 
 def get_current_user():
     jwt = request.cookies.get("jwt")
@@ -68,12 +80,10 @@ def get_current_user():
     else:
         jwt = request.headers['Authorization']
         current_user = get_username_from_jwt(jwt)
-    with lock:
-        if current_user not in db_dict:
-            db_dict[current_user] = dict()
     return current_user
 
-@shorten_url_service.route('/', methods=['POST'])
+
+@app.route('/', methods=['POST'])
 @require_auth
 def create_short_url():
     """Creates a new short URL/ID for the given long URL."""
@@ -83,75 +93,77 @@ def create_short_url():
         return jsonify({'error': '400 Bad request', 'message': 'Long URL is required in the request body'}), 400
     if not is_valid_url(long_url):
         return jsonify({'error': '400 Bad request', 'message': 'Invalid Long URL'}), 400
-    id_for_long_url = generate_id(current_user)
-    with lock:
-        db_dict[current_user][id_for_long_url] = long_url
+    id_for_long_url = generate_id()
+    res = UrlMappingDao.create_url_mapping(username=current_user, short_url=id_for_long_url, long_url=long_url)
+    if not res:
+        return jsonify({'error': 'Fail to create a new mapping. Try again.'}), 500
     # short_url = 'http://127.0.0.1:5000/{id}'.format(id=id)
     return jsonify({'id': id_for_long_url}), 201
 
 
-@shorten_url_service.route('/', methods=['GET'])
+@app.route('/', methods=['GET'])
 @require_auth
 def list_urls():
     current_user = get_current_user()
-    return jsonify(db_dict[current_user]), 200
+    res = UrlMappingDao.get_by_username(current_user)
+    return jsonify(res), 200
 
 
-@shorten_url_service.route('/<id>', methods=['GET'])
+@app.route('/<id>', methods=['GET'])
 @require_auth
 def get_long_url(id):
     """Redirect the user to the long URL corresponding to the given ID."""
-    current_user = get_current_user()
-    if id not in db_dict[current_user]:
+    res = UrlMappingDao.get_by_short_url(short_url=id)
+    if not res:
         return jsonify({'error': 'Given ID is not existed'}), 404
-    with lock:
-        long_url = db_dict[current_user][id]
-    return jsonify({'value': long_url}), 301
+    else:
+        return jsonify({'value': res.get(id)}), 301
 
 
-@shorten_url_service.route('/<id>', methods=['PUT'])
+@app.route('/<id>', methods=['PUT'])
 @require_auth
 def update_long_url(id):
     """Updates the URL behind the given ID."""
     # data = json.loads(request.data.decode('utf-8'))
     # new_url = data.get('url')
-    current_user = get_current_user()
     data = json.loads(request.data.decode('utf-8'))
     if data.get("url") is None:
         return jsonify({'error': '400 Bad request', 'message': 'No url field'}), 400
     else:
         new_url = data.get("url")
-        if id not in db_dict[current_user]:
-            return jsonify({'error': '404 Not Found', 'message': 'Given ID is not found'}), 404
         if not new_url:
             return jsonify({'error': '400 Bad request', 'message': 'Invalid new url'}), 400
         if not is_valid_url(new_url):
             return jsonify({'error': '400 Bad request', 'message': 'Invalid new url'}), 400
-        with lock:
-            db_dict[current_user][id] = new_url
-        return jsonify({'value': new_url}), 200
+        res = UrlMappingDao.update_url_mapping(short_url=id, new_long_url=new_url)
+        if not res:
+            return jsonify({'error': '404 Not Found', 'message': 'Given ID is not found'}), 404
+        return jsonify({'value': res.get(id)}), 200
 
 
-@shorten_url_service.route('/<id>', methods=['DELETE'])
+@app.route('/<id>', methods=['DELETE'])
 @require_auth
 def delete_url(id):
     """Deletes the given short URL/ID."""
     current_user = get_current_user()
-    if id not in db_dict[current_user]:
+    res = UrlMappingDao.delete_by_short_url(short_url=id)
+    if res:
+        response = make_response(jsonify({'message': f'{id} has been deleted successfully'}))
+        response.headers['Content-Type'] = 'application/json'
+        response.status_code = 204
+        return response
+    else:
         return jsonify({'error': '404 Not Found', 'message': 'Given ID is not found'}), 404
-    with lock:
-        del db_dict[current_user][id]
-    response = make_response(jsonify({'message': f'{id} has been deleted successfully'}))
-    response.headers['Content-Type'] = 'application/json'
-    response.status_code = 204
-    return response
 
 
-@shorten_url_service.route('/', methods=['DELETE'])
+@app.route('/', methods=['DELETE'])
 @require_auth
 def delete_all_urls():
     """Deletes all ID/URL pairs"""
     current_user = get_current_user()
-    with lock:
-        db_dict[current_user].clear()
+    UrlMappingDao.delete_by_username(username=current_user)
     return jsonify({'message': 'ALL deleted successfully'}), 404
+
+
+if __name__ == '__main__':
+    app.run(Debug=True, host='0.0.0.0', port=5001)

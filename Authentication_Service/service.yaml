@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth_app_service
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 5002
+    protocol: TCP
+    targetPort: 5002
+#    nodePort: 32123
+    name: http
+  selector:
+    app: auth_app_app
+    version: v1

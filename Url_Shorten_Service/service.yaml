@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: flask-web-app-service
+  name: url_shorten_app_service
 spec:
   type: LoadBalancer
   ports:
@@ -11,5 +11,5 @@ spec:
 #    nodePort: 32123
     name: http
   selector:
-    app: flask-web-app
+    app: url_shorten_app
     version: v1
