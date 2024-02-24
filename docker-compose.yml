@@ -29,5 +29,13 @@ services:
     depends_on:
       - mysql_db
 
+  nginx:
+    image: nginx_image
+    ports:
+      - "5003:80"
+    depends_on:
+      - url_shortener_service
+      - auth_service
+
 volumes:
   db-data:
