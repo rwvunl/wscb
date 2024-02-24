@@ -22,7 +22,7 @@ engine = create_engine(BaseConfig.SQLALCHEMY_DATABASE_URI,
                        pool_timeout=30,  # 池中没有线程最多等待的时间，否则报错
                        pool_recycle=-1  # 多久之后对线程池中的线程进行一次连接的回收（重置）
                        )
-Base.metadata.create_all(engine)  # 通过基类与数据库进行交互创建表结构，此时表内还没有数据
+# Base.metadata.create_all(engine)
 
 def generate_id():
     """Generates ID."""
@@ -124,8 +124,8 @@ def get_long_url(id):
 @require_auth
 def update_long_url(id):
     """Updates the URL behind the given ID."""
-    # data = json.loads(request.data.decode('utf-8'))
-    # new_url = data.get('url')
+    # mysql = json.loads(request.mysql.decode('utf-8'))
+    # new_url = mysql.get('url')
     data = json.loads(request.data.decode('utf-8'))
     if data.get("url") is None:
         return jsonify({'error': '400 Bad request', 'message': 'No url field'}), 400

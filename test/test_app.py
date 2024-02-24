@@ -32,7 +32,7 @@ class TestApi(unittest.TestCase):
             return random_row
 
     def setUp(self):
-        # populate data before each test by doing two POST
+        # populate mysql before each test by doing two POST
         self.id_shortened_url_1 = ""
         self.id_shortened_url_2 = ""
 

@@ -21,7 +21,7 @@ engine = create_engine(BaseConfig.SQLALCHEMY_DATABASE_URI,
                        pool_timeout=30,  # 池中没有线程最多等待的时间，否则报错
                        pool_recycle=-1  # 多久之后对线程池中的线程进行一次连接的回收（重置）
                        )
-Base.metadata.create_all(engine)  # 通过基类与数据库进行交互创建表结构，此时表内还没有数据
+# Base.metadata.create_all(engine)
 
 def validate_username_and_password(func):
     @wraps(func)

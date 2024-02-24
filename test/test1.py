@@ -8,8 +8,8 @@ class TestApi(unittest.TestCase):
     base_url = "http://127.0.0.1:5000"
 
     def setUp(self):
-        # populate data before each test by doing two POST
-        #TODO make it read data from a csv or similar to avoid people hardcoding answers
+        # populate mysql before each test by doing two POST
+        #TODO make it read mysql from a csv or similar to avoid people hardcoding answers
         self.url_to_shorten_1="https://en.wikipedia.org/wiki/Docker_(software)"
         self.url_to_shorten_2="https://fastapi.tiangolo.com"
         self.id_shortened_url_1=""

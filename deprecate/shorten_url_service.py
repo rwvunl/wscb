@@ -107,8 +107,8 @@ def get_long_url(id):
 @require_auth
 def update_long_url(id):
     """Updates the URL behind the given ID."""
-    # data = json.loads(request.data.decode('utf-8'))
-    # new_url = data.get('url')
+    # mysql = json.loads(request.mysql.decode('utf-8'))
+    # new_url = mysql.get('url')
     data = json.loads(request.data.decode('utf-8'))
     if data.get("url") is None:
         return jsonify({'error': '400 Bad request', 'message': 'No url field'}), 400
