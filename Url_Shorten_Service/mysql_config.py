@@ -4,7 +4,7 @@ class BaseConfig(object):
     DIALCT = "mysql"
     DRITVER = "pymysql"
     HOST = 'wscb_db_host'
-    PORT = "3306"
+    PORT = "3307"
     USERNAME = "root"
     PASSWORD = "12345678"
     DBNAME = 'wscb_db'
