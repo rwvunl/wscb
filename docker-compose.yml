@@ -30,7 +30,7 @@ services:
       - mysql_db
 
   nginx:
-    image: nginx_image
+    image: ivywr/p4-wscb:nginx_image
     ports:
       - "5003:80"
     depends_on:
