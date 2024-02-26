@@ -8,6 +8,8 @@ services:
       MYSQL_DATABASE: "wscb_db"
     ports:
       - "3307:3306"
+    networks:
+      - wscb_network
     volumes:
       - db-data:/var/lib/mysql
 
@@ -17,6 +19,8 @@ services:
       SQLALCHEMY_DATABASE_URI: "mysql+pymysql://root:12345678@mysql_db:3306/wscb_db"
     ports:
       - "5001:5001"
+    networks:
+      - wscb_network
     depends_on:
       - mysql_db
 
@@ -26,6 +30,8 @@ services:
       SQLALCHEMY_DATABASE_URI: "mysql+pymysql://root:12345678@mysql_db:3306/wscb_db"
     ports:
       - "5002:5002"
+    networks:
+      - wscb_network
     depends_on:
       - mysql_db
 
@@ -33,9 +39,14 @@ services:
     image: ivywr/p4-wscb:nginx_image
     ports:
       - "5003:80"
+    networks:
+      - wscb_network
     depends_on:
       - url_shortener_service
       - auth_service
+
+networks:
+  wscb_network:
 
 volumes:
   db-data:
