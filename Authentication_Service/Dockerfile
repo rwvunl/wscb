@@ -31,4 +31,4 @@ RUN apk add --no-cache bash
 
 RUN chmod +x /wait-for-it.sh
 
-CMD ["/wait-for-it.sh", "mysql_db:3306", "--", "python3", "-m" , "flask","--app" ,"app","run", "--host=0.0.0.0","--port=5002"]
+CMD ["/wait-for-it.sh", "mysql-db:3306", "--", "python3", "-m" , "flask","--app" ,"app","run", "--host=0.0.0.0","--port=5002"]

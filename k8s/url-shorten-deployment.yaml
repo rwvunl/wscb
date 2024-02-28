@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: url-shorten-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: url-shorten-service
+  template:
+    metadata:
+      labels:
+        app: url-shorten-service
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - wscb-a3-app
+      containers:
+      - name: url-shorten
+        image: ivywr/p4-wscb:url_shorten_image
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5001
+        env:
+          - name: DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: db-user
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: db-password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: url-shorten-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5001
+    targetPort: 5001
+  selector:
+    app: url-shorten-service

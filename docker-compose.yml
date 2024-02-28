@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  mysql_db:
+  mysql-db:
     image: ivywr/p4-wscb:wscb_db_image
     environment:
       MYSQL_ROOT_PASSWORD: "12345678"
@@ -13,27 +13,27 @@ services:
     volumes:
       - db-data:/var/lib/mysql
 
-  url_shortener_service:
+  url-shorten-service:
     image: ivywr/p4-wscb:url_shorten_image
     environment:
-      SQLALCHEMY_DATABASE_URI: "mysql+pymysql://root:12345678@mysql_db:3306/wscb_db"
+      SQLALCHEMY_DATABASE_URI: "mysql+pymysql://root:12345678@mysql-db:3306/wscb_db"
     ports:
       - "5001:5001"
     networks:
       - wscb_network
     depends_on:
-      - mysql_db
+      - mysql-db
 
-  auth_service:
+  auth-service:
     image: ivywr/p4-wscb:auth_image
     environment:
-      SQLALCHEMY_DATABASE_URI: "mysql+pymysql://root:12345678@mysql_db:3306/wscb_db"
+      SQLALCHEMY_DATABASE_URI: "mysql+pymysql://root:12345678@mysql-db:3306/wscb_db"
     ports:
       - "5002:5002"
     networks:
       - wscb_network
     depends_on:
-      - mysql_db
+      - mysql-db
 
   nginx:
     image: ivywr/p4-wscb:nginx_image
@@ -42,8 +42,8 @@ services:
     networks:
       - wscb_network
     depends_on:
-      - url_shortener_service
-      - auth_service
+      - url-shorten-service
+      - auth-service
 
 networks:
   wscb_network:
