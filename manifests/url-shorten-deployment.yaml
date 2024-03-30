@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: url-shorten-service
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: url-shorten-service
